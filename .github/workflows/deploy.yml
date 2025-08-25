@@ -20,9 +20,19 @@ jobs:
         run: |
           HASH=$(docker run --rm caddy:2-alpine caddy hash-password --plaintext "${{ secrets.WIKI_PASS }}")
           echo "WIKI_PASS_HASH=$HASH" >> $GITHUB_ENV
-
+      
       # 3️⃣ Deploy to VM via SSH (idempotent)
-      - name: Deploy to VM via SSH
+      - name: Copy docker-compose.yml and Caddyfile to VM
+        uses: appleboy/scp-action@v0.1.0
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          source: "docker-compose.yml,Caddyfile"
+          target: "/home/${{ secrets.VM_USER }}/wiki/"
+
+      - name: Deploy containers on VM
         uses: appleboy/ssh-action@v0.1.9
         with:
           host: ${{ secrets.VM_HOST }}
@@ -30,18 +40,6 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           script: |
-            mkdir -p /home/${{ secrets.VM_USER }}/wiki
-
-            # Copy docker-compose.yml
-            cat <<'EOF' > /home/${{ secrets.VM_USER }}/wiki/docker-compose.yml
-            $(cat docker-compose.yml)
-            EOF
-
-            # Copy Caddyfile
-            cat <<'EOF' > /home/${{ secrets.VM_USER }}/wiki/Caddyfile
-            $(cat Caddyfile)
-            EOF
-
             # Ensure environment variables
             export WIKI_USER='${{ secrets.WIKI_USER }}'
             export WIKI_PASS_HASH='${{ env.WIKI_PASS_HASH }}'
@@ -51,3 +49,4 @@ jobs:
 
             # Start/update containers idempotently
             docker-compose up -d --remove-orphans
+            docker-compose ps
