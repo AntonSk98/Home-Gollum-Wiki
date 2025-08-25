@@ -1,0 +1,26 @@
+name: Deploy Secure Wiki
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Hash password for Caddy
+        id: hash
+        run: |
+          HASH=$(docker run --rm caddy:2-alpine caddy hash-password --plaintext "${{ secrets.WIKI_PASS }}")
+          echo "WIKI_PASS_HASH=$HASH" >> $GITHUB_ENV
+
+      - name: Start Docker Compose
+        run: docker-compose up -d
+        env:
+          WIKI_USER: ${{ secrets.WIKI_USER }}
+          WIKI_PASS_HASH: ${{ env.WIKI_PASS_HASH }}

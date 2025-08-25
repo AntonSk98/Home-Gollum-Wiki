@@ -1,0 +1,8 @@
+:8080 {
+    basicauth /* {
+        {$WIKI_USER} {$WIKI_PASS_HASH}
+    }
+
+    root * /srv/static/gollum
+    file_server
+}
