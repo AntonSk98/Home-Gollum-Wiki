@@ -19,8 +19,20 @@ jobs:
           HASH=$(docker run --rm caddy:2-alpine caddy hash-password --plaintext "${{ secrets.WIKI_PASS }}")
           echo "WIKI_PASS_HASH=$HASH" >> $GITHUB_ENV
 
-      - name: Start Docker Compose
-        run: docker-compose up -d
-        env:
-          WIKI_USER: ${{ secrets.WIKI_USER }}
-          WIKI_PASS_HASH: ${{ env.WIKI_PASS_HASH }}
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Copy docker-compose.yml and Caddyfile to VM
+        run: |
+          scp docker-compose.yml ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}:/home/${{ secrets.VM_USER }}/wiki/docker-compose.yml
+          scp Caddyfile ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}:/home/${{ secrets.VM_USER }}/wiki/Caddyfile
+
+      - name: Deploy on VM
+        run: |
+          ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "
+            cd /home/${{ secrets.VM_USER }}/wiki && \
+            export WIKI_USER='${{ secrets.WIKI_USER }}' WIKI_PASS_HASH='${{ env.WIKI_PASS_HASH }}' && \
+            docker-compose up -d --build
+          "
