@@ -20,9 +20,15 @@ jobs:
         run: |
           HASH=$(docker run --rm caddy:2-alpine caddy hash-password --plaintext "${{ secrets.WIKI_PASS }}")
           echo "WIKI_PASS_HASH=$HASH" >> $GITHUB_ENV
-      
-      # 3️⃣ Deploy to VM via SSH (idempotent)
-      - name: Copy docker-compose.yml and Caddyfile to VM
+
+      # 3️⃣ Add VM host to known_hosts (avoid host key verification issues)
+      - name: Add VM host to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
+
+      # 4️⃣ Copy docker-compose.yml and Caddyfile to VM
+      - name: Copy files to VM
         uses: appleboy/scp-action@v0.1.0
         with:
           host: ${{ secrets.VM_HOST }}
@@ -32,6 +38,7 @@ jobs:
           source: "docker-compose.yml,Caddyfile"
           target: "/home/${{ secrets.VM_USER }}/wiki/"
 
+      # 5️⃣ Deploy containers idempotently
       - name: Deploy containers on VM
         uses: appleboy/ssh-action@v0.1.9
         with:
@@ -47,6 +54,11 @@ jobs:
             # Navigate to wiki folder
             cd /home/${{ secrets.VM_USER }}/wiki
 
+            # Pull latest images only if using floating tags (optional)
+            # docker-compose pull
+
             # Start/update containers idempotently
             docker-compose up -d --remove-orphans
+
+            # Show running containers
             docker-compose ps
