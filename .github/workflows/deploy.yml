@@ -10,29 +10,44 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Checkout repository
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      # 2️⃣ Hash password for Caddy
       - name: Hash password for Caddy
         id: hash
         run: |
           HASH=$(docker run --rm caddy:2-alpine caddy hash-password --plaintext "${{ secrets.WIKI_PASS }}")
           echo "WIKI_PASS_HASH=$HASH" >> $GITHUB_ENV
 
-      - name: Set up SSH
-        uses: webfactory/ssh-agent@v0.9.0
+      # 3️⃣ Deploy to VM via SSH (idempotent)
+      - name: Deploy to VM via SSH
+        uses: appleboy/ssh-action@v0.1.9
         with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            mkdir -p /home/${{ secrets.VM_USER }}/wiki
 
-      - name: Copy docker-compose.yml and Caddyfile to VM
-        run: |
-          scp docker-compose.yml ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}:/home/${{ secrets.VM_USER }}/wiki/docker-compose.yml
-          scp Caddyfile ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}:/home/${{ secrets.VM_USER }}/wiki/Caddyfile
+            # Copy docker-compose.yml
+            cat <<'EOF' > /home/${{ secrets.VM_USER }}/wiki/docker-compose.yml
+            $(cat docker-compose.yml)
+            EOF
 
-      - name: Deploy on VM
-        run: |
-          ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "
-            cd /home/${{ secrets.VM_USER }}/wiki && \
-            export WIKI_USER='${{ secrets.WIKI_USER }}' WIKI_PASS_HASH='${{ env.WIKI_PASS_HASH }}' && \
-            docker-compose up -d --build
-          "
+            # Copy Caddyfile
+            cat <<'EOF' > /home/${{ secrets.VM_USER }}/wiki/Caddyfile
+            $(cat Caddyfile)
+            EOF
+
+            # Ensure environment variables
+            export WIKI_USER='${{ secrets.WIKI_USER }}'
+            export WIKI_PASS_HASH='${{ env.WIKI_PASS_HASH }}'
+
+            # Navigate to wiki folder
+            cd /home/${{ secrets.VM_USER }}/wiki
+
+            # Start/update containers idempotently
+            docker-compose up -d --remove-orphans
