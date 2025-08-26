@@ -1,4 +1,4 @@
-name: Deploy Secure Wiki
+name: Deploy Wiki
 
 on:
   push:
@@ -19,24 +19,28 @@ jobs:
           HASH=$(docker run --rm caddy:2-alpine caddy hash-password --plaintext "${{ secrets.WIKI_PASS }}")
           echo "WIKI_PASS_HASH=$HASH" >> $GITHUB_ENV
 
+      # ✅ Write private key to file
+      - name: Prepare SSH key
+        run: |
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > private_key.pem
+          chmod 600 private_key.pem
+
       - name: Copy files to VM
         uses: appleboy/scp-action@v0.1.0
         with:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          key_path: private_key.pem
           port: 22
           source: "docker-compose.yml,Caddyfile"
           target: "/home/${{ secrets.VM_USER }}/wiki/"
 
       - name: Deploy containers on VM
         uses: appleboy/ssh-action@v0.1.9
-        env:
-          WIKI_USER: ${{ secrets.WIKI_USER }}
         with:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          key_path: private_key.pem
           port: 22
           envs: WIKI_USER,WIKI_PASS_HASH
           script: |
