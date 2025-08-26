@@ -36,7 +36,7 @@ jobs:
         with:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
-          key_path: private_key.pem
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           envs: WIKI_USER,WIKI_PASS_HASH
           script: |
