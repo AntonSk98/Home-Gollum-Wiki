@@ -31,8 +31,6 @@ jobs:
 
       - name: Deploy containers on VM
         uses: appleboy/ssh-action@v0.1.9
-        env:
-          GOLLUM_VERSION: 6.1
         with:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
@@ -40,5 +38,8 @@ jobs:
           port: 22
           envs: WIKI_USER,WIKI_PASS_HASH
           script: |
+            export GOLLUM_VERSION=6.1
+            export WIKI_USER='${{ secrets.WIKI_USER }}'
+            export WIKI_PASS_HASH='${{ env.WIKI_PASS_HASH }}'
             cd /home/${{ secrets.VM_USER }}/wiki
             docker-compose up -d --remove-orphans
