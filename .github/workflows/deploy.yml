@@ -28,6 +28,7 @@ jobs:
           port: 22
           source: "docker-compose.yml,Caddyfile"
           target: "/home/${{ secrets.VM_USER }}/wiki/"
+          debug: true
 
       - name: Deploy containers on VM
         uses: appleboy/ssh-action@v0.1.9
