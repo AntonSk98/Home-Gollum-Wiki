@@ -18,6 +18,16 @@ jobs:
         run: |
           HASH=$(docker run --rm caddy:2-alpine caddy hash-password --plaintext "${{ secrets.WIKI_PASS }}")
           echo "WIKI_PASS_HASH=$HASH" >> $GITHUB_ENV
+      - name: Debug SSH connection
+        run: |
+          # write private key to file
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > private_key.pem
+          chmod 600 private_key.pem
+
+          # try connecting (no commands executed, just handshake)
+          ssh -o StrictHostKeyChecking=no -i private_key.pem \
+            ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} \
+            "echo '✅ SSH connection successful as $(whoami)'"
 
       - name: Copy files to VM
         uses: appleboy/scp-action@v0.1.0
@@ -28,7 +38,6 @@ jobs:
           port: 22
           source: "docker-compose.yml,Caddyfile"
           target: "/home/${{ secrets.VM_USER }}/wiki/"
-          debug: true
 
       - name: Deploy containers on VM
         uses: appleboy/ssh-action@v0.1.9
