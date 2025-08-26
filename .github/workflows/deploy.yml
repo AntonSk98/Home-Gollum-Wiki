@@ -10,18 +10,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout repository
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      # 2️⃣ Hash password for Caddy
       - name: Hash password for Caddy
         id: hash
         run: |
           HASH=$(docker run --rm caddy:2-alpine caddy hash-password --plaintext "${{ secrets.WIKI_PASS }}")
           echo "WIKI_PASS_HASH=$HASH" >> $GITHUB_ENV
 
-      # 4️⃣ Copy docker-compose.yml and Caddyfile to VM
       - name: Copy files to VM
         uses: appleboy/scp-action@v0.1.0
         with:
@@ -32,21 +29,16 @@ jobs:
           source: "docker-compose.yml,Caddyfile"
           target: "/home/${{ secrets.VM_USER }}/wiki/"
 
-      # 5️⃣ Deploy containers idempotently
       - name: Deploy containers on VM
         uses: appleboy/ssh-action@v0.1.9
+        env:
+          WIKI_USER: ${{ secrets.WIKI_USER }
         with:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
+          envs: WIKI_USER,WIKI_PASS_HASH
           script: |
-            # Ensure environment variables
-            export WIKI_USER='${{ secrets.WIKI_USER }}'
-            export WIKI_PASS_HASH='${{ env.WIKI_PASS_HASH }}'
-
-            # Navigate to wiki folder
             cd /home/${{ secrets.VM_USER }}/wiki
-
-            # Start/update containers idempotently
             docker-compose up -d --remove-orphans
