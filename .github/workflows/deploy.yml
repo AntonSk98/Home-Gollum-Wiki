@@ -18,7 +18,7 @@ jobs:
         run: |
           HASH=$(docker run --rm caddy:2-alpine caddy hash-password --plaintext "${{ secrets.WIKI_PASS }}")
           echo "WIKI_PASS_HASH=$HASH" >> $GITHUB_ENV
-          
+
       - name: Debug SSH connection
         run: |
           # write private key to file
@@ -37,11 +37,11 @@ jobs:
           chmod 600 private_key.pem
 
       - name: Copy files to VM
-        uses: appleboy/scp-action@v0.1.0
+        uses: appleboy/scp-action@v0.1.4
         with:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
-          key_path: private_key.pem
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           source: "docker-compose.yml,Caddyfile"
           target: "/home/${{ secrets.VM_USER }}/wiki/"
