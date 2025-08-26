@@ -54,11 +54,5 @@ jobs:
             # Navigate to wiki folder
             cd /home/${{ secrets.VM_USER }}/wiki
 
-            # Pull latest images only if using floating tags (optional)
-            # docker-compose pull
-
             # Start/update containers idempotently
             docker-compose up -d --remove-orphans
-
-            # Show running containers
-            docker-compose ps
