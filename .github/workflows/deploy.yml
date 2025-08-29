@@ -26,7 +26,7 @@ jobs:
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
-          source: "docker-compose.yml,Caddyfile"
+          source: "docker-compose.yml,Caddyfile,Dockerfile"
           target: "/home/${{ secrets.VM_USER }}/wiki/"
 
       - name: Deploy containers on VM
