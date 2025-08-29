@@ -1,6 +1,19 @@
 :8080 {
     reverse_proxy household-gollum:4567
 
+
+    rate_limit {
+        zone global {
+            key {remote_ip}
+            events 500
+            window 1m
+        }
+
+        match {
+            path /*
+        }
+    }
+
     basicauth /* {
         {$WIKI_USER} {$WIKI_PASS_HASH}
     }

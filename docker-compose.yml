@@ -10,7 +10,7 @@ services:
     command: ["--port", "4567", "--host", "0.0.0.0"]
 
   caddy:
-    image: caddy:2-alpine
+    build: .
     ports:
       - "8888:8080"
     volumes:
