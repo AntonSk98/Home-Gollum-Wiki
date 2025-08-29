@@ -4,7 +4,7 @@ services:
   household-gollum:
     image: gollumwiki/gollum:${GOLLUM_VERSION}
     volumes:
-      - ./wiki:/wiki
+      - ./wiki/persistence:/wiki
     expose:
       - "4567"
     command: ["--port", "4567", "--host", "0.0.0.0"]
