@@ -9,13 +9,13 @@ services:
       - "4567"
     command: ["--port", "4567", "--host", "0.0.0.0"]
 
-caddy:
-  build: .
-  ports:
-    - "80:80"     # HTTP for Let's Encrypt verification
-    - "443:443"   # HTTPS
-  volumes:
-    - ./Caddyfile:/etc/caddy/Caddyfile:ro
-  environment:
-    WIKI_USER: ${WIKI_USER}
-    WIKI_PASS_HASH: ${WIKI_PASS_HASH}
+  caddy:
+    build: .
+    ports:
+      - "80:80"     # HTTP for Let's Encrypt verification
+      - "443:443"   # HTTPS
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    environment:
+      WIKI_USER: ${WIKI_USER}
+      WIKI_PASS_HASH: ${WIKI_PASS_HASH}
