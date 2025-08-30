@@ -4,15 +4,15 @@ services:
   household-gollum:
     image: gollumwiki/gollum:${GOLLUM_VERSION}
     volumes:
-      - ./wiki:/wiki
+      - ./persistence:/wiki
     expose:
       - "4567"
     command: ["--port", "4567", "--host", "0.0.0.0"]
 
   caddy:
-    image: caddy:2-alpine
+    build: .
     ports:
-      - "8080:8080"
+      - "8888:8080"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
     environment:
